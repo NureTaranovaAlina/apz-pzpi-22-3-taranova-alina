@@ -1,0 +1,971 @@
+Харківський національний університет радіоелектроніки
+Кафедра Програмної інженерії
+ЗВІТ
+
+з лабораторної роботи № 1
+з дисципліни «Архітектура програмного забезпечення»
+
+Виконала:
+стк. гр. ПЗПІ-22-3
+
+Таранова А. А.
+
+Перевірив:
+старший викладач
+
+Сокорчук І.П.
+
+Харків 2025
+
+1 ІСТОРІЯ ЗМІН
+№
+
+Дата
+
+Версія звіту
+
+Опис змін та виправлень
+
+1
+
+23.03.2025
+
+0.1
+
+Створено розділ «Історія змін»,
+створено титульний лист. Додано
+базову структуру серверної
+частини для доробки
+
+2
+
+26.04.2025
+
+Додано UML діаграму
+
+0.1
+
+розгортання; UML діаграму
+прецедентів;
+3
+
+28.04.2025
+
+Додано ER-модель даних; UML
+
+0.1
+
+діаграму компонентів
+2 ЗАВДАННЯ
+Опишіть програмну архітектуру програмної системи та архітектуру її
+серверної частини.
+Опишіть математичні методи обробки користувацьких даних для реалізації
+бізнес логіки програмної системи.
+Опишіть математичні методи для обробки користувацьких даних у серверній
+частині програмної системи.
+Опишіть ER-модель даних програмної системи та структуру БД.
+Опишіть специфікацію REST або іншого вибраного вами методу взаємодії
+програмних компонент програмної системи.
+Опишіть використані у серверній частині програмної системи програмні
+технології та компоненти.
+Опишіть способи інтерналізації у серверній частині програмної системи.
+Опишіть програмну реалізацію серверної частини програмної системи.
+Опишіть етапи функціонального тестування створеної серверної частини
+програмної системи.
+
+2
+
+3 ОПИС ВИКОНАНОЇ РОБОТИ
+Система має багаторівневу архітектуру з розподілом на клієнтську,
+серверну частини та базу даних. Клієнт взаємодіє із сервером через REST
+API. Сервер реалізований на основі FastAPI та виконує обробку запитів,
+бізнес-логіку, а також доступ до бази даних PostgreSQL через ORM
+SQLAlchemy. У системі реалізовано модуль повторення карток на основі
+алгоритму SM-2, генерування кросвордів і підбір тегів через TF-IDF.
+Система розгортається за допомогою контейнеризації Docker. В окремих
+контейнерах запускаються:
+ FastAPI-сервер
+ База даних PostgreSQL
+Контейнери об'єднані в загальну мережу. Взаємодія здійснюється через
+внутрішній TCP/IP-протокол.
+Сервер має модульну архітектуру:
+app/main.py — точка входу
+app/routers/ — роутери для групування ендпоінтів за сутностями
+app/models/ — моделі бази даних SQLAlchemy
+app/schemas/ — схеми Pydantic для валідації запитів і відповідей
+app/services/ — бізнес-логіка: обробка повторень, кросвордів, метрик
+app/core/ — загальні налаштування, підключення до БД
+app/utils/ — допоміжні функції (SM-2, TF-IDF, генерація кросвордів)
+У системі реалізовано обробку помилок, валідацію даних та багатомовність
+через спеціальний middleware.
+Основні прецеденти використання:
+ Реєстрація та аутентифікація користувача
+ Створення, редагування та видалення карток
+ Проходження сесій повторення
+ Генерація кросвордів за вивченими словами
+ Перегляд статистики навчання
+ Адміністрування карток та користувачів
+3
+
+ER-діаграма складається з наступних сутностей:
+ User (id, email, hashed_password)
+ Card (id, word, translation, definition, examples, tags, owner_id)
+ RepetitonSession (id, user_id, card_id, last_reviewed, next_review, interval,
+ease_factor)
+ Crossword (id, user_id, created_at, word_positions)
+Зв'язки:
+1. Один користувач має багато карток
+2. Одна картка має багато сесій повторення
+3. Один користувач має багато кросвордів
+Система реалізує наступні групи ендпоінтів:
+Метод
+
+Шлях
+
+Опис
+
+POST
+
+/auth/register
+
+Реєстрація користувача
+
+POST
+
+/auth/login
+
+Логін користувача
+
+GET
+
+/flashcards/
+
+Отримати список карток
+
+POST
+
+/flashcards/
+
+Створити нову картку
+
+PUT
+
+/flashcards/{id}
+
+Оновити картку
+
+DELETE /flashcards/{id}
+
+Видалити картку
+
+GET
+
+/review/start
+
+Почати сесію повторення
+
+POST
+
+/review/submit
+
+Надіслати відповідь на повторення
+
+GET
+
+/crosswords/generate Згенерувати новий кросворд
+
+GET
+
+/metrics/user
+
+Отримати статистику користувача
+
+GET
+
+/metrics/admin
+
+Отримати загальну статистику для
+адміністрування
+
+Документація OpenAPI автоматично доступна за /docs.
+Основні компоненти серверної частини:
+4
+
+ FastAPI-роутери
+ Сервіси обробки бізнес-логіки
+ Моделі бази даних
+ Pydantic-схеми
+ Кросворд-генератор
+ Алгоритм SM-2
+ Алгоритм TF-IDF
+ Модуль мультимовності (i18n middleware)
+4 ВИСНОВКИ
+У ході роботи була розроблена серверна частина для системи
+інтерактивного вивчення слів із використанням сучасних технологій FastAPI,
+PostgreSQL та Docker. Було реалізовано REST API для роботи з
+флешкартами, повтореннями, кросвордами та статистикою користувачів.
+Система підтримує масштабованість, гнучке адміністрування та розширення
+функціоналу.
+
+5
+
+ДОДАТОК А
+Відеозапис
+Відеозапис презентації результатів лабораторної роботи:
+https://youtu.be/x6ZsiGKlRds
+Хронологічний опис відеозапису:
+00:00 - Вступ. Привітання.
+00:24 - Опис завдання та опис системи.
+01:00 - Ендпоінт 'Реєстрація'. Тестування функції реєстрації.
+01:50 - Ендпоінт 'Логін'.Тестування функції логіну.
+02:30 - Ендпоінт 'Картка'. Тестування створення карток зі словами.
+03:45 - Ендпоінт 'Вивести всі картки'. Тестування логіки виведення всіх
+карток.
+04:00 - Ендпоінт 'Повторити картку'. Тестування повторення карток зі
+словами. Отримання інформації як часто треба повторювати їх.
+06:00 - Ендпоінт 'Створити кросворд'. Тестування функції створення
+кросворду.
+06:48 - Ендпоінт 'Вивести всі кросворди'.Тестування логіки виведення всіх
+кросвордів.
+07:30 - Ендпоінт 'Вивесті всіх користувачів'. Тестування логіки виведення
+всіх користувачів.
+07:43 - Ендпоінт 'Змінити роль'. Тестування функції зміни ролей для
+користувачів.
+08:20 - Ендпоінт 'Звіт'. Тестування логіки звітування.
+09:28 - Висновки
+
+6
+
+ДОДАТОК Б
+Графічні матеріали
+
+Рисунок Б.1 — Діаграма розгортання
+
+Рисунок Б.2 — UML-діаграма прецедентів
+
+7
+
+Рисунок Б.3 — ER-діаграма даних
+
+Рисунок Б.4 — Діаграма компонентів
+8
+
+ДОДАТОК В
+Програмний код
+В.1 Математична обробка прикладних даних
+GitHub репозиторій: crud.py
+1
+
+def compute_tag_idf(db: Session, user_id: int) ->
+
+dict[str, float]:
+2
+
+cards
+
+=
+
+db.query(models.Flashcard).filter_by(owner_id=user_id).
+all()
+3
+
+N = len(cards) or 1
+
+4
+
+counter: Counter[str] = Counter(tag for c in cards
+
+for tag in (c.tags or []))
+5
+
+return {tag: math.log(N / df) for tag, df in
+
+counter.items()}
+6
+7
+
+def compute_retention(db: Session, user_id: int) ->
+
+list[dict]:
+8
+
+cards
+
+=
+
+db.query(models.Flashcard).filter_by(owner_id=user_id).
+all()
+9
+
+today = date.today()
+
+10
+
+result = []
+
+11
+
+for c in cards:
+
+12
+
+hl = max(1.0, (c.ef or 2.5) * max(c.interval
+
+or 1, 1))
+13
+
+t = (today - (c.next_review or today)).days
+
+14
+
+P = math.exp(-t / hl)
+
+15
+
+result.append({"id": c.id, "word": c.word,
+
+"retention": round(P, 3)})
+16
+
+return result
+9
+
+В.2 Алгоритм SM-2 для повторень
+GitHub репозиторій: crud.py
+1
+
+def _sm2(card: models.Flashcard, quality: int):
+
+2
+
+EF = card.ef or 2.5
+
+3
+
+EF = max(1.3, EF + (0.1 - (5 - quality) * (0.08 +
+
+(5 - quality) * 0.02)))
+4
+
+if card.repetitions == 0:
+
+5
+
+interval = 1
+
+6
+
+elif card.repetitions == 1:
+
+7
+
+interval = 6
+
+8
+
+else:
+
+9
+
+interval = int(card.interval * EF)
+
+10
+
+card.ef = EF
+
+11
+
+card.interval = interval
+
+12
+
+card.repetitions += 1
+
+13
+
+card.next_review
+
+=
+
+date.today()
+
++
+
+timedelta(days=interval)
+В.3 Система аутентифікації
+GitHub репозиторій: auth.py
+1
+
+def create_access_token(data: dict, expires_delta =
+
+None):
+2
+3
+
+to_encode = data.copy()
+expire = datetime.utcnow() + (expires_delta or
+
+timedelta(minutes=30))
+4
+5
+
+to_encode.update({"exp": expire})
+return
+
+jwt.encode(to_encode,
+
+SECRET_KEY,
+
+algorithm=ALGORITHM)
+6
+
+10
+
+7
+
+def
+
+get_current_user(token:
+
+Depends(oauth2_scheme),
+
+db:
+
+str
+
+Session
+
+=
+=
+
+Depends(database.get_db)):
+8
+
+credentials_exception
+
+HTTPException(status_code=401,
+
+=
+
+detail="Invalid
+
+credentials")
+9
+
+try:
+
+10
+
+payload = jwt.decode(token, SECRET_KEY,
+
+algorithms=[ALGORITHM])
+11
+
+username: str = payload.get("sub")
+
+12
+
+if not username:
+
+13
+14
+
+raise credentials_exception
+except JWTError:
+
+15
+
+raise credentials_exception
+
+16
+
+user
+
+=
+
+crud.get_user_by_username(db,
+
+username=username)
+17
+
+if not user:
+
+18
+19
+
+raise credentials_exception
+return user
+
+В.4 База даних та ORM
+GitHub репозиторій: database.py
+1
+2
+
+engine = create_engine(DATABASE_URL)
+SessionLocal
+
+=
+
+sessionmaker(autocommit=False,
+
+autoflush=False, bind=engine)
+3
+
+Base = declarative_base()
+
+4
+5
+
+def get_db():
+
+6
+
+db = SessionLocal()
+
+7
+
+try:
+
+8
+
+yield db
+11
+
+9
+10
+
+finally:
+db.close()
+
+В.5 Pydantic-схеми для валідації даних
+GitHub репозиторій: schemas.py
+1
+
+from pydantic import BaseModel, Field
+
+2
+
+from typing import Optional, List, Dict
+
+3
+
+from datetime import date
+
+4
+5
+6
+
+class UserBase(BaseModel):
+username: str
+
+7
+8
+9
+
+class UserCreate(UserBase):
+password: str
+
+10
+11
+
+class User(UserBase):
+
+12
+
+id: int
+
+13
+
+role: str
+
+14
+
+class Config:
+
+15
+
+orm_mode = True
+
+16
+17
+
+class FlashcardBase(BaseModel):
+
+18
+
+word: str
+
+19
+
+translation: str
+
+20
+
+definition: Optional[str] = None
+
+21
+
+examples: Optional[List[str]] = None
+
+22
+
+tags: Optional[List[str]] = None
+
+23
+24
+25
+
+class FlashcardCreate(FlashcardBase):
+pass
+
+26
+12
+
+27
+
+class Flashcard(FlashcardBase):
+
+28
+
+id: int
+
+29
+
+owner_id: int
+
+30
+
+ef: float
+
+31
+
+interval: int
+
+32
+
+repetitions: int
+
+33
+
+next_review: Optional[date] = None
+
+34
+
+class Config:
+
+35
+
+orm_mode = True
+
+36
+37
+
+class TagIDF(BaseModel):
+
+38
+
+tag: str
+
+39
+
+idf: float
+
+40
+41
+
+class FlashcardRetention(BaseModel):
+
+42
+
+id: int
+
+43
+
+word: str
+
+44
+
+retention: float # [0..1]
+
+45
+46
+
+class AdminReport(BaseModel):
+
+47
+
+total_users: int
+
+48
+
+total_flashcards: int
+
+49
+
+avg_flashcards_per_user: float
+
+50
+51
+
+class CrosswordBase(BaseModel):
+
+52
+
+title: str
+
+53
+
+grid: List[List[str]]
+
+54
+
+clues: Dict[str, Dict[str, str]]
+
+55
+56
+
+class CrosswordCreate(CrosswordBase):
+13
+
+57
+
+pass
+
+58
+59
+
+class Crossword(CrosswordBase):
+
+60
+
+id: int
+
+61
+
+owner_id: int
+
+62
+
+class Config:
+
+63
+
+orm_mode = True
+
+64
+65
+
+class ReviewRequest(BaseModel):
+
+66
+
+quality: int = Field(
+
+67
+
+...,
+
+68
+
+ge=0, le=5,
+
+69
+
+description="Response quality assessment from
+
+0 (don't remember at all) to 5 (easy)"
+70
+
+)
+
+В.6 SQLAlchemy-моделі для структури БД
+GitHub репозиторій: models.py
+1
+
+from
+
+sqlalchemy
+
+import
+
+Column,
+
+Integer,
+
+String,
+
+ForeignKey, JSON, Text, Float, Date
+2
+
+from sqlalchemy.sql import func
+
+3
+
+from sqlalchemy.orm import relationship
+
+4
+
+from app.database import Base
+
+5
+6
+
+class User(Base):
+
+7
+
+__tablename__ = "users"
+
+8
+
+id = Column(Integer, primary_key=True, index=True)
+
+9
+
+username = Column(String, unique=True, index=True,
+
+nullable=False)
+10
+
+hashed_password = Column(String, nullable=False)
+
+14
+
+11
+
+role
+
+=
+
+Column(String,
+
+nullable=False,
+
+default="user")
+12
+
+flashcards
+
+=
+
+relationship("Flashcard",
+
+=
+
+relationship("Crossword",
+
+back_populates="owner")
+13
+
+crosswords
+
+back_populates="owner")
+14
+15
+16
+
+class Flashcard(Base):
+__tablename__ = "flashcards"
+
+17
+
+id = Column(Integer, primary_key=True, index=True)
+
+18
+
+word = Column(String, index=True, nullable=False)
+
+19
+
+translation = Column(String, nullable=False)
+
+20
+
+definition = Column(Text, nullable=True)
+
+21
+
+examples = Column(JSON, nullable=True)
+
+22
+
+tags = Column(JSON, nullable=True)
+
+23
+
+ef = Column(Float, nullable=False, default=2.5)
+
+24
+
+interval = Column(Integer, nullable=False,
+
+default=0)
+25
+
+repetitions = Column(Integer, nullable=False,
+
+default=0)
+26
+
+next_review = Column(Date, nullable=True)
+
+27
+
+owner_id
+
+=
+
+Column(Integer,
+
+ForeignKey("users.id"))
+28
+
+owner
+
+=
+
+relationship("User",
+
+back_populates="flashcards")
+29
+30
+31
+32
+33
+
+class Crossword(Base):
+__tablename__ = "crosswords"
+id = Column(Integer, primary_key=True, index=True)
+title = Column(String, nullable=False)
+15
+
+34
+
+grid = Column(JSON, nullable=False)
+
+35
+
+clues = Column(JSON, nullable=False)
+
+36
+
+owner_id
+
+=
+
+Column(Integer,
+
+ForeignKey("users.id"))
+37
+
+owner
+
+=
+
+relationship("User",
+
+back_populates="crosswords")
+
+16
+
+
