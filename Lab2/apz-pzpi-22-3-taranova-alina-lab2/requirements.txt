@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-sqlalchemy
+sqlalchemy==1.4.26
 pydantic
 python-dotenv
 psycopg2-binary
@@ -8,5 +8,7 @@ pyjwt[crypto]
 passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
+fastapi==0.68.0
+
 
 
